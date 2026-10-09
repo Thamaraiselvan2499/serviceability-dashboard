@@ -1,8 +1,7 @@
 <title>Serviceability Dashboard</title>
-<meta name="description" content="Daily garage serviceability dashboard built from the Zoho Sheets Serviceability tab.">
+<meta name="description" content="Serviceability dashboard. Drop the Serviceability Excel file to update.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: KPI strip on top, trend and ranked bars side by side, full table below. */
 :root {
   --bg: #f6f5f1;
   --surface: #ffffff;
@@ -16,6 +15,7 @@
   --serious: #c2561c;
   --critical: #b42323;
   --track: #ebe9e2;
+  --drop: #fbfaf7;
   --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme: light;
@@ -34,6 +34,7 @@
     --serious: #f0875a;
     --critical: #f07a7a;
     --track: #2a2e36;
+    --drop: #191c21;
     color-scheme: dark;
   }
 }
@@ -50,6 +51,7 @@
   --serious: #f0875a;
   --critical: #f07a7a;
   --track: #2a2e36;
+  --drop: #191c21;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -69,32 +71,9 @@ body {
   display: grid;
   gap: 16px;
 }
-header.top {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  align-items: end;
-  justify-content: space-between;
-}
+header.top { display: grid; gap: 4px; }
 h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
-.sub { color: var(--ink-2); margin-top: 2px; }
-.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-select, input[type="search"], input[type="date"], .btn {
-  font: inherit;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 10px;
-  min-height: 36px;
-}
-.btn { cursor: pointer; font-weight: 600; }
-.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn:focus-visible, select:focus-visible, input:focus-visible, th[tabindex]:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.btn:disabled { opacity: .5; cursor: default; }
+.sub { color: var(--ink-2); }
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -103,22 +82,37 @@ select, input[type="search"], input[type="date"], .btn {
   min-width: 0;
 }
 .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 0 0 12px; font-weight: 700; }
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  background: var(--drop);
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--ink-2);
+  transition: border-color .15s, background .15s;
+}
+.dropzone.over { border-color: var(--accent); background: var(--surface); color: var(--ink); }
+.dropzone strong { color: var(--ink); font-size: 15px; display: block; margin-bottom: 4px; }
+.dropzone .hint { font-size: 12px; color: var(--ink-3); }
+.dropzone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.status { margin-top: 10px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.notice { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--track); color: var(--ink-2); }
+.notice.err { color: var(--critical); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .kpi .label { color: var(--ink-2); font-size: 12px; }
 .kpi .value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .kpi .note { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .kpi.overall .value { color: var(--accent); }
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; }
-@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .bars { display: grid; gap: 6px; }
-.bar-row { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 96px; gap: 10px; align-items: center; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 150px; gap: 10px; align-items: center; }
 .bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { height: 14px; background: var(--track); border-radius: 4px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 4px; }
-.bar-val { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.bar-val { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chip {
   display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
-  border: 1px solid currentColor; white-space: nowrap;
+  border: 1px solid currentColor; white-space: nowrap; margin-left: 6px;
 }
 .band-good { color: var(--good); }
 .band-warn { color: var(--warn); }
@@ -130,9 +124,12 @@ select, input[type="search"], input[type="date"], .btn {
 .legend .lg-warn::before { color: var(--warn); }
 .legend .lg-serious::before { color: var(--serious); }
 .legend .lg-critical::before { color: var(--critical); }
-svg.trend { width: 100%; height: auto; display: block; }
-svg.trend text { fill: var(--ink-3); font-size: 11px; font-family: var(--mono); }
 .table-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+input[type="search"] {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-height: 36px; min-width: 200px;
+}
+input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
 table { border-collapse: collapse; width: 100%; min-width: 720px; font-variant-numeric: tabular-nums; }
 th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
@@ -143,28 +140,24 @@ th[aria-sort="descending"]::after { content: " \25BC"; font-size: 10px; }
 tbody tr:last-child td { border-bottom: none; }
 tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
 .empty { padding: 28px 12px; text-align: center; color: var(--ink-2); }
-.notice { font-size: 13px; color: var(--ink-2); padding: 10px 12px; border-radius: 8px; background: var(--track); }
-.notice.err { color: var(--critical); }
-.dialog-note { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
-.hidden-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.foot-note { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
 @media (prefers-reduced-motion: no-preference) { .bar-fill { transition: width .4s ease; } }
+@media (min-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div>
-      <h1>Serviceability Dashboard</h1>
-      <div class="sub" id="asOf">Loading snapshots…</div>
-    </div>
-    <div class="controls">
-      <label for="snapSel" class="sub">Snapshot</label>
-      <select id="snapSel" aria-label="Choose snapshot date"></select>
-      <label for="dateIn" class="sub">Save as</label>
-      <input type="date" id="dateIn" aria-label="Date for the uploaded snapshot">
-      <label class="btn primary" for="csvIn" tabindex="0" id="uploadLbl">Upload Excel</label>
-      <input type="file" id="csvIn" accept=".xlsx,.xlsm,.xls" class="hidden-input" aria-label="Upload Serviceability Excel file">
-    </div>
+    <h1>Serviceability Dashboard</h1>
+    <div class="sub" id="asOf">Drop the Serviceability Excel file below to load the report.</div>
   </header>
+
+  <section class="panel" aria-label="Upload Serviceability file">
+    <div class="dropzone" id="drop" tabindex="0" role="region" aria-label="Drop area for the Serviceability Excel file">
+      <strong>Drag and drop the Serviceability Excel file here</strong>
+      <span class="hint">.xlsx file with a "Serviceability" sheet</span>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
 
   <div id="msg"></div>
 
@@ -172,27 +165,21 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     <div class="kpis" id="kpis"></div>
   </section>
 
-  <div class="grid2">
-    <section class="panel" aria-labelledby="rankH">
-      <h2 id="rankH">Serviceability % by garage</h2>
-      <div class="bars" id="bars"></div>
-      <div class="legend" aria-label="Band key">
-        <span class="lg-good">100% to 50%</span>
-        <span class="lg-warn">under 50%</span>
-        <span class="lg-serious">under 20%</span>
-        <span class="lg-critical">0%</span>
-      </div>
-    </section>
-    <section class="panel" aria-labelledby="trendH">
-      <h2 id="trendH">Overall serviceability trend</h2>
-      <div id="trend"></div>
-    </section>
-  </div>
+  <section class="panel" aria-labelledby="rankH">
+    <h2 id="rankH">Serviceability % by garage</h2>
+    <div class="bars" id="bars"></div>
+    <div class="legend" aria-label="Band key">
+      <span class="lg-good">50% and above</span>
+      <span class="lg-warn">20% to 49%</span>
+      <span class="lg-serious">1% to 19%</span>
+      <span class="lg-critical">0%</span>
+    </div>
+  </section>
 
   <section class="panel" aria-labelledby="tblH">
     <div class="table-tools">
       <h2 id="tblH" style="margin:0">Garage detail</h2>
-      <input type="search" id="q" placeholder="Filter garages" aria-label="Filter garages" style="min-width:200px">
+      <input type="search" id="q" placeholder="Filter garages" aria-label="Filter garages">
     </div>
     <div class="table-scroll">
       <table id="tbl">
@@ -200,7 +187,7 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
           <tr>
             <th class="name" data-k="name" tabindex="0">Garage</th>
             <th data-k="target" tabindex="0">Target</th>
-            <th data-k="mtd" tabindex="0">Serviceable</th>
+            <th data-k="serv" tabindex="0">Serviceable</th>
             <th data-k="pct" tabindex="0">Serviceability %</th>
             <th data-k="under" tabindex="0">Under service</th>
             <th data-k="empty" tabindex="0">Empty return</th>
@@ -213,7 +200,7 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
         <tfoot id="tfoot"></tfoot>
       </table>
     </div>
-    <div class="dialog-note">Serviceability % = Serviceable ÷ Target. Upload the Serviceability tab as an Excel file each day; a snapshot for the chosen date is saved and replaces any earlier upload for that date.</div>
+    <div class="foot-note">Serviceability % = Serviceable ÷ Target. Garages with no target show as 0%.</div>
   </section>
 </div>
 
@@ -222,7 +209,6 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
 (function () {
   "use strict";
 
-  // ---------- helpers ----------
   var $ = function (s) { return document.querySelector(s); };
   var esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -231,16 +217,8 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
   };
   var fmtInt = function (n) { return Math.round(n).toLocaleString("en-IN"); };
   var pctTxt = function (n) { return (Math.round(n * 10) / 10).toFixed(n % 1 === 0 ? 0 : 1) + "%"; };
-  var todayStr = function () {
-    var d = new Date();
-    var m = String(d.getMonth() + 1).padStart(2, "0");
-    var day = String(d.getDate()).padStart(2, "0");
-    return d.getFullYear() + "-" + m + "-" + day;
-  };
-  var fmtDate = function (iso) {
-    var p = iso.split("-");
-    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-    return dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  var fmtDate = function (d) {
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   };
   var band = function (pct, target) {
     if (!target) return { k: "critical", label: "No target" };
@@ -251,16 +229,14 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
   };
   var BAND_COLOR = { good: "var(--good)", warn: "var(--warn)", serious: "var(--serious)", critical: "var(--critical)" };
 
-  // ---------- CSV parsing (handles quoted fields) ----------
+  // ---------- CSV-style text parsing (used on the sheet's values) ----------
   function parseCSV(text) {
     var rows = [], row = [], field = "", inQ = false, i = 0;
-    text = text.replace(/^﻿/, "");
     while (i < text.length) {
       var c = text[i];
       if (inQ) {
-        if (c === '"') {
-          if (text[i + 1] === '"') { field += '"'; i++; } else { inQ = false; }
-        } else { field += c; }
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else { inQ = false; } }
+        else { field += c; }
       } else if (c === '"') { inQ = true; }
       else if (c === ",") { row.push(field); field = ""; }
       else if (c === "\n" || c === "\r") {
@@ -273,38 +249,38 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     return rows;
   }
 
-  function garagesFromCSV(text) {
+  // Reads the first garage table in the Serviceability sheet; stops at its Total row or a repeated header.
+  function garagesFromSheetText(text) {
     var rows = parseCSV(text).filter(function (r) { return r.some(function (c) { return c.trim() !== ""; }); });
-    if (!rows.length) throw new Error("The file is empty.");
     var hdr = 0;
     while (hdr < rows.length && rows[hdr].map(function (h) { return h.trim().toLowerCase(); }).indexOf("garage name") < 0) hdr++;
-    if (hdr >= rows.length) throw new Error('No "Garage Name" column found. Export the Serviceability tab with its header row.');
+    if (hdr >= rows.length) throw new Error('No "Garage Name" header found in the Serviceability sheet.');
     rows = rows.slice(hdr);
     var head = rows[0].map(function (h) { return h.trim().toLowerCase().replace(/\s+/g, " "); });
     var col = function (name) { return head.indexOf(name); };
-    var iName = col("garage name");
-    var iTarget = col("target"), iMtd = col("mtd"), iServ = col("serviceability");
+    var iName = col("garage name"), iTarget = col("target"), iMtd = col("mtd"), iServ = col("serviceability");
     var iUnder = col("under service"), iEmpty = col("empty return"), iInsp = col("inspection only"), iVnr = col("vnr");
-    if (iTarget < 0) throw new Error('No "Target" column found.');
+    if (iTarget < 0) throw new Error('No "Target" column found in the Serviceability sheet.');
     var num = function (r, i) {
       if (i < 0) return 0;
       var v = parseFloat(String(r[i] || "").replace(/[%,\s]/g, ""));
       return isNaN(v) ? 0 : v;
     };
-    var out = [];
+    var out = [], stop = false;
     rows.slice(1).forEach(function (r) {
+      if (stop) return;
       var name = (r[iName] || "").trim();
+      if (/^(grand\s+)?total$/i.test(name) || /^garage name$/i.test(name) || /^s\s*no$/i.test(name)) { stop = true; return; }
       if (!name) return;
-      var target = num(r, iTarget);
-      var mtd = num(r, iMtd);
+      var target = num(r, iTarget), mtd = num(r, iMtd);
       var serv = iServ >= 0 ? num(r, iServ) : mtd;
       out.push({
-        name: name, target: target, mtd: mtd, serv: serv,
+        name: name, target: target, serv: serv,
         under: num(r, iUnder), empty: num(r, iEmpty), insp: num(r, iInsp), vnr: num(r, iVnr),
         pct: target ? (serv / target) * 100 : 0
       });
     });
-    if (!out.length) throw new Error("No garage rows were found under the header.");
+    if (!out.length) throw new Error("No garage rows were found in the Serviceability sheet.");
     return out;
   }
 
@@ -319,38 +295,27 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     return t;
   }
 
-  // ---------- state ----------
-  var state = { snaps: new Map(), selected: null, sortKey: "pct", sortDir: -1, filter: "" };
-  var db = null;
-  var localOnly = false;
+  var state = { garages: null, fileName: "", asOf: null, sortKey: "pct", sortDir: -1, filter: "" };
 
-  function sortedDates() { return Array.from(state.snaps.keys()).sort(); }
+  function kpi(label, value, note, cls) {
+    return '<div class="kpi ' + cls + '"><div class="label">' + esc(label) + '</div><div class="value">' +
+      esc(value) + '</div><div class="note">' + esc(note) + "</div></div>";
+  }
 
-  // ---------- rendering ----------
   function render() {
-    var dates = sortedDates();
-    var sel = $("#snapSel");
-    if (!dates.length) {
-      sel.innerHTML = "";
-      $("#asOf").textContent = "No snapshots yet";
-      $("#kpis").innerHTML = "";
-      $("#bars").innerHTML = '<div class="empty">Upload the Serviceability tab as an Excel file to create the first snapshot.</div>';
-      $("#trend").innerHTML = '<div class="empty">The trend appears once there are at least two snapshots.</div>';
+    var garages = state.garages;
+    if (!garages) {
+      $("#kpis").innerHTML = kpi("Overall serviceability", "–", "load a file to see figures", "overall") +
+        kpi("Serviceable (MTD)", "–", "", "") + kpi("Target", "–", "", "") +
+        kpi("Under service", "–", "", "") + kpi("Empty return", "–", "", "") + kpi("Zero serviceability", "–", "", "");
+      $("#bars").innerHTML = '<div class="empty">No data loaded yet.</div>';
       $("#tbody").innerHTML = '<tr><td colspan="9" class="empty">No garage data yet.</td></tr>';
       $("#tfoot").innerHTML = "";
       return;
     }
-    if (!state.selected || !state.snaps.has(state.selected)) state.selected = dates[dates.length - 1];
-    sel.innerHTML = dates.slice().reverse().map(function (d) {
-      return '<option value="' + esc(d) + '"' + (d === state.selected ? " selected" : "") + ">" + esc(fmtDate(d)) + "</option>";
-    }).join("");
-
-    var snap = state.snaps.get(state.selected);
-    var garages = snap.garages;
-    var t = snap.totals || totalsOf(garages);
-    var latest = dates[dates.length - 1];
-    $("#asOf").textContent = "Showing " + fmtDate(state.selected) +
-      (state.selected === latest ? " (latest)" : "") + " · " + garages.length + " garages";
+    var t = totalsOf(garages);
+    $("#asOf").textContent = "Serviceability as of " + fmtDate(state.asOf) + " · " + garages.length + " garages";
+    $("#status").textContent = "Loaded: " + state.fileName;
 
     $("#kpis").innerHTML = [
       kpi("Overall serviceability", pctTxt(t.pct), fmtInt(t.serv) + " of " + fmtInt(t.target) + " target", "overall"),
@@ -361,9 +326,8 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
       kpi("Zero serviceability", fmtInt(t.zero), "garages at 0%", "")
     ].join("");
 
-    // ranked bars
     var ranked = garages.slice().sort(function (a, b) { return b.pct - a.pct || b.serv - a.serv; });
-    $("#bars").innerHTML = ranked.length ? ranked.map(function (g) {
+    $("#bars").innerHTML = ranked.map(function (g) {
       var b = band(g.pct, g.target);
       var w = Math.max(0, Math.min(100, g.pct));
       return '<div class="bar-row">' +
@@ -371,54 +335,16 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
         '<div class="bar-track" role="img" aria-label="' + esc(g.name) + " " + pctTxt(g.pct) + '"><div class="bar-fill" style="width:' + w + "%;background:" + BAND_COLOR[b.k] + '"></div></div>' +
         '<div class="bar-val">' + pctTxt(g.pct) + ' <span class="chip band-' + b.k + '">' + b.label + "</span></div>" +
         "</div>";
-    }).join("") : '<div class="empty">No garages in this snapshot.</div>';
+    }).join("");
 
-    renderTrend(dates);
     renderTable(garages, t);
-  }
-
-  function kpi(label, value, note, cls) {
-    return '<div class="kpi ' + cls + '"><div class="label">' + esc(label) + '</div><div class="value">' +
-      esc(value) + '</div><div class="note">' + esc(note) + "</div></div>";
-  }
-
-  function renderTrend(dates) {
-    var el = $("#trend");
-    if (dates.length < 2) {
-      el.innerHTML = '<div class="empty">The trend appears once there are at least two snapshots.</div>';
-      return;
-    }
-    var W = 560, H = 230, padL = 40, padR = 14, padT = 14, padB = 36;
-    var pts = dates.map(function (d) { return { d: d, p: state.snaps.get(d).totals ? state.snaps.get(d).totals.pct : totalsOf(state.snaps.get(d).garages).pct }; });
-    var maxY = Math.max(10, Math.ceil(Math.max.apply(null, pts.map(function (x) { return x.p; })) / 10) * 10);
-    var x = function (i) { return padL + (pts.length === 1 ? 0 : (i * (W - padL - padR)) / (pts.length - 1)); };
-    var y = function (v) { return padT + (1 - v / maxY) * (H - padT - padB); };
-    var grid = "", ticks = 4;
-    for (var k = 0; k <= ticks; k++) {
-      var v = (maxY / ticks) * k, yy = y(v).toFixed(1);
-      grid += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--line)"/>';
-      grid += '<text x="' + (padL - 6) + '" y="' + (Number(yy) + 4) + '" text-anchor="end">' + Math.round(v) + "%</text>";
-    }
-    var line = pts.map(function (p, i) { return x(i).toFixed(1) + "," + y(p.p).toFixed(1); }).join(" ");
-    var area = x(0).toFixed(1) + "," + (H - padB) + " " + line + " " + x(pts.length - 1).toFixed(1) + "," + (H - padB);
-    var dots = pts.map(function (p, i) {
-      return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.p).toFixed(1) + '" r="' + (i === pts.length - 1 ? 5 : 3.5) + '" fill="var(--accent)"><title>' + esc(fmtDate(p.d)) + ": " + pctTxt(p.p) + "</title></circle>";
-    }).join("");
-    var labels = pts.map(function (p, i) {
-      if (pts.length > 8 && i % 2 === 1 && i !== pts.length - 1) return "";
-      return '<text x="' + x(i).toFixed(1) + '" y="' + (H - 12) + '" text-anchor="middle">' + esc(p.d.slice(5)) + "</text>";
-    }).join("");
-    el.innerHTML = '<svg class="trend" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Overall serviceability by snapshot date">' +
-      grid +
-      '<polygon points="' + area + '" fill="var(--accent)" fill-opacity=".12"/>' +
-      '<polyline points="' + line + '" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>' +
-      dots + labels + "</svg>";
   }
 
   function renderTable(garages, t) {
     var q = state.filter.trim().toLowerCase();
     var rows = garages.map(function (g) {
-      return { name: g.name, target: g.target, mtd: g.serv, pct: g.pct, under: g.under, empty: g.empty, insp: g.insp, vnr: g.vnr, band: band(g.pct, g.target).k, label: band(g.pct, g.target).label };
+      var b = band(g.pct, g.target);
+      return { name: g.name, target: g.target, serv: g.serv, pct: g.pct, under: g.under, empty: g.empty, insp: g.insp, vnr: g.vnr, band: b.k, label: b.label };
     }).filter(function (r) { return !q || r.name.toLowerCase().indexOf(q) >= 0; });
     var k = state.sortKey, dir = state.sortDir;
     rows.sort(function (a, b) {
@@ -433,7 +359,7 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
       return "<tr>" +
         '<td class="name">' + esc(r.name) + "</td>" +
         "<td>" + fmtInt(r.target) + "</td>" +
-        "<td>" + fmtInt(r.mtd) + "</td>" +
+        "<td>" + fmtInt(r.serv) + "</td>" +
         "<td>" + pctTxt(r.pct) + "</td>" +
         "<td>" + fmtInt(r.under) + "</td>" +
         "<td>" + fmtInt(r.empty) + "</td>" +
@@ -451,95 +377,42 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     $("#msg").innerHTML = text ? '<div class="notice' + (isErr ? " err" : "") + '" role="status">' + esc(text) + "</div>" : "";
   }
 
-  // ---------- data flow ----------
-  function ingestDocs(docs) {
-    var m = new Map();
-    docs.forEach(function (d) {
-      if (d && d.exists && d.data) {
-        var body = d.data();
-        if (body && body.date && Array.isArray(body.garages)) m.set(body.date, body);
-      }
-    });
-    // keep any local-only snapshots that the store does not have
-    if (localOnly) state.snaps.forEach(function (v, k) { if (!m.has(k)) m.set(k, v); });
-    state.snaps = m;
-    render();
-  }
-
-  async function init() {
+  async function loadFile(file) {
     try {
-      var claude = window.claude;
-      db = claude && claude.use ? await claude.use("db") : null;
-    } catch (e) { db = null; }
-    if (db) {
-      try {
-        db.collection("snapshots").onSnapshot(function (snap) {
-          ingestDocs(snap.docs);
-        }, function (err) {
-          localOnly = true;
-          message("Live storage stopped (" + (err && err.code ? err.code : "error") + "). New uploads stay on this screen only.", true);
-        });
-      } catch (e) { localOnly = true; db = null; }
-    } else {
-      localOnly = true;
-      message("Saved storage is not available in this view. Uploads will show here, but will not be kept for the next visit.");
-    }
-    render();
-  }
-
-  async function saveSnapshot(body) {
-    var saved = false;
-    if (db) {
-      try {
-        await db.collection("snapshots").doc(body.date).set(body);
-        saved = true;
-      } catch (e) {
-        var code = e && e.code ? e.code : "error";
-        message("Could not save the snapshot (" + code + "). " + (e && e.message ? e.message : ""), true);
-        return false;
-      }
-    }
-    state.snaps.set(body.date, body);
-    state.selected = body.date;
-    render();
-    return saved;
-  }
-
-  $("#csvIn").addEventListener("change", async function (ev) {
-    var file = ev.target.files && ev.target.files[0];
-    ev.target.value = "";
-    if (!file) return;
-    var date = $("#dateIn").value || todayStr();
-    try {
-      var text;
-      if (!/\.(xlsx|xlsm|xls)$/i.test(file.name)) throw new Error("Please upload an Excel file (.xlsx).");
-      if (!window.XLSX) throw new Error("Excel reading is not available in this view. Try again in a new window.");
+      if (!/\.(xlsx|xlsm|xls)$/i.test(file.name)) throw new Error("Please drop an Excel file (.xlsx).");
+      if (!window.XLSX) throw new Error("Excel reading is not available in this view. Reload the page and try again.");
       var wb = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
       var name = wb.SheetNames.find(function (n) { return /serviceab/i.test(n); });
-      if (!name) throw new Error('No "Serviceability" sheet in this file. Upload the workbook that contains the Serviceability tab.');
-      text = window.XLSX.utils.sheet_to_csv(wb.Sheets[name]);
-      var garages = garagesFromCSV(text);
-      var body = {
-        date: date,
-        savedAt: new Date().toISOString(),
-        source: file.name,
-        totals: totalsOf(garages),
-        garages: garages
-      };
-      var stored = await saveSnapshot(body);
-      if (stored) message("Saved snapshot for " + fmtDate(date) + " from " + file.name + ".");
-      else if (!db) message("Showing " + fmtDate(date) + " from " + file.name + " (not saved for later visits).");
+      if (!name) throw new Error('No "Serviceability" sheet in this file.');
+      var text = window.XLSX.utils.sheet_to_csv(wb.Sheets[name]);
+      state.garages = garagesFromSheetText(text);
+      state.fileName = file.name;
+      state.asOf = file.lastModified ? new Date(file.lastModified) : new Date();
+      message("");
+      render();
     } catch (e) {
       message(e.message || "Could not read that file.", true);
     }
-  });
+  }
 
-  $("#uploadLbl").addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#csvIn").click(); }
+  var drop = $("#drop");
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); });
   });
+  ["dragleave", "dragend"].forEach(function (ev) {
+    drop.addEventListener(ev, function () { drop.classList.remove("over"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    e.preventDefault();
+    drop.classList.remove("over");
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+  // Stop a file dropped outside the box from replacing the page.
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("drop", function (e) { e.preventDefault(); });
 
-  $("#snapSel").addEventListener("change", function (e) { state.selected = e.target.value; render(); });
-  $("#q").addEventListener("input", function (e) { state.filter = e.target.value; render(); });
+  $("#q").addEventListener("input", function (e) { state.filter = e.target.value; if (state.garages) render(); });
   document.querySelectorAll("#tbl th[data-k]").forEach(function (th) {
     var act = function () {
       var k = th.dataset.k;
@@ -551,7 +424,6 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     th.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } });
   });
 
-  $("#dateIn").value = todayStr();
-  init();
+  render();
 })();
 </script>
