@@ -93,6 +93,13 @@ h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.01em; text
 .dropzone .hint { font-size: 12px; color: var(--ink-3); }
 .dropzone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .status { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+.head-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.admin-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn { font: inherit; font-weight: 700; color: var(--surface); background: var(--accent); border: 0; border-radius: 8px; padding: 9px 14px; min-height: 40px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line); }
+.login { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.login input { flex: 1 1 220px; }
+[hidden] { display: none !important; }
 .notice { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--track); color: var(--ink-2); margin-top: 10px; }
 .notice.err { color: var(--critical); }
 .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
@@ -127,16 +134,31 @@ tr.row-zero td.name { color: var(--critical); }
 
 <div class="wrap">
   <header>
-    <h1>Serviceability Table</h1>
-    <div class="sub" id="asOf">Drop the Serviceability Excel file below to show the table.</div>
+    <div class="head-row">
+      <div>
+        <h1>Serviceability Table</h1>
+        <div class="sub" id="asOf">Loading the latest report…</div>
+      </div>
+      <div class="admin-box">
+        <button type="button" id="adminBtn" class="btn">Admin login</button>
+        <span id="adminState" class="hint"></span>
+      </div>
+    </div>
   </header>
 
-  <section class="panel" aria-label="Upload Serviceability file">
-    <div class="dropzone" id="drop" tabindex="0" role="region" aria-label="Drop area for the Serviceability Excel file">
-      <strong>Drag and drop the Serviceability Excel file here</strong>
-      <span class="hint">.xlsx file with a "Serviceability" sheet</span>
+  <section class="panel" id="adminPanel" aria-label="Admin upload" hidden>
+    <form id="loginForm" class="login" hidden>
+      <input type="password" id="pw" placeholder="Admin password" autocomplete="current-password" aria-label="Admin password">
+      <button type="submit" class="btn">Log in</button>
+      <button type="button" id="cancelLogin" class="btn ghost">Cancel</button>
+    </form>
+    <div id="uploadArea" hidden>
+      <div class="dropzone" id="drop" tabindex="0" role="region" aria-label="Drop area for the Serviceability Excel file">
+        <strong>Drag and drop the Serviceability Excel file here</strong>
+        <span class="hint">.xlsx file with a "Serviceability" sheet</span>
+      </div>
+      <div class="status" id="status"></div>
     </div>
-    <div class="status" id="status"></div>
     <div id="msg"></div>
   </section>
 
@@ -331,8 +353,58 @@ tr.row-zero td.name { color: var(--critical); }
     $("#msg").innerHTML = text ? '<div class="notice' + (isErr ? " err" : "") + '" role="status">' + esc(text) + "</div>" : "";
   }
 
+  // Admin session: the password is kept only in this browser tab's session storage.
+  var adminPw = "";
+  try { adminPw = sessionStorage.getItem("adminPw") || ""; } catch (e) { adminPw = ""; }
+
+  function setAdmin(on) {
+    $("#uploadArea").hidden = !on;
+    $("#adminPanel").hidden = !on && $("#loginForm").hidden;
+    $("#adminBtn").textContent = on ? "Log out" : "Admin login";
+    $("#adminState").textContent = on ? "Admin: you can upload" : "";
+    if (!on) {
+      $("#loginForm").hidden = true;
+      $("#adminPanel").hidden = true;
+    }
+  }
+
+  function logout() {
+    adminPw = "";
+    try { sessionStorage.removeItem("adminPw"); } catch (e) { /* ignore */ }
+    setAdmin(false);
+    message("");
+  }
+
+  $("#adminBtn").addEventListener("click", function () {
+    if (adminPw) { logout(); return; }
+    $("#adminPanel").hidden = false;
+    $("#uploadArea").hidden = true;
+    $("#loginForm").hidden = false;
+    $("#pw").focus();
+  });
+  $("#cancelLogin").addEventListener("click", function () {
+    $("#loginForm").hidden = true;
+    $("#adminPanel").hidden = true;
+  });
+  $("#loginForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var pw = $("#pw").value;
+    try {
+      var resp = await fetch("/api/login", { method: "POST", headers: { "x-admin-password": pw } });
+      if (!resp.ok) { message("Wrong password.", true); return; }
+      adminPw = pw;
+      try { sessionStorage.setItem("adminPw", pw); } catch (err) { /* ignore */ }
+      $("#pw").value = "";
+      setAdmin(true);
+      message("");
+    } catch (err) {
+      message("Could not reach the server. Try again.", true);
+    }
+  });
+
   async function loadFile(file) {
     try {
+      if (!adminPw) throw new Error("Log in as admin to upload.");
       if (!/\.(xlsx|xlsm|xls)$/i.test(file.name)) throw new Error("Please drop an Excel file (.xlsx).");
       if (!window.XLSX) throw new Error("Excel reading is not available in this view. Reload the page and try again.");
       var wb = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
@@ -346,11 +418,14 @@ tr.row-zero td.name { color: var(--critical); }
       render();
       var resp = await fetch("/api/report", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-password": adminPw },
         body: JSON.stringify({ fileName: state.fileName, asOf: state.asOf.toISOString(), garages: state.garages })
       });
       if (resp.ok) {
         message("Saved. Everyone who opens this link now sees this report.");
+      } else if (resp.status === 401) {
+        logout();
+        message("Admin login expired. Log in again to upload.", true);
       } else {
         var j = await resp.json().catch(function () { return {}; });
         message("Showing on screen only: " + (j.error || "save failed") + ".", true);
@@ -408,5 +483,10 @@ tr.row-zero td.name { color: var(--critical); }
     render();
   }
   loadSaved();
+  if (adminPw) {
+    fetch("/api/login", { method: "POST", headers: { "x-admin-password": adminPw } })
+      .then(function (r) { setAdmin(r.ok); if (!r.ok) { adminPw = ""; } })
+      .catch(function () { setAdmin(false); });
+  }
 })();
 </script>
