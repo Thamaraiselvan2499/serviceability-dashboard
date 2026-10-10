@@ -1,5 +1,5 @@
-<title>Serviceability Dashboard</title>
-<meta name="description" content="Serviceability dashboard. Drop the Serviceability Excel file to update.">
+<title>Serviceability Table</title>
+<meta name="description" content="Serviceability table from the Serviceability Excel sheet. Drop the file to update.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root {
@@ -17,7 +17,6 @@
   --track: #ebe9e2;
   --drop: #fbfaf7;
   --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -71,9 +70,8 @@ body {
   display: grid;
   gap: 16px;
 }
-header.top { display: grid; gap: 4px; }
 h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
-.sub { color: var(--ink-2); }
+.sub { color: var(--ink-2); margin-top: 4px; }
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -81,12 +79,11 @@ h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.01em; text
   padding: 16px;
   min-width: 0;
 }
-.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 0 0 12px; font-weight: 700; }
 .dropzone {
   border: 2px dashed var(--line);
   border-radius: 12px;
   background: var(--drop);
-  padding: 22px 16px;
+  padding: 20px 16px;
   text-align: center;
   color: var(--ink-2);
   transition: border-color .15s, background .15s;
@@ -95,60 +92,43 @@ h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -0.01em; text
 .dropzone strong { color: var(--ink); font-size: 15px; display: block; margin-bottom: 4px; }
 .dropzone .hint { font-size: 12px; color: var(--ink-3); }
 .dropzone:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.status { margin-top: 10px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.notice { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--track); color: var(--ink-2); }
+.status { margin-top: 10px; font-size: 13px; color: var(--ink-2); }
+.notice { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--track); color: var(--ink-2); margin-top: 10px; }
 .notice.err { color: var(--critical); }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.kpi .label { color: var(--ink-2); font-size: 12px; }
-.kpi .value { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
-.kpi .note { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.kpi.overall .value { color: var(--accent); }
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.bars { display: grid; gap: 6px; }
-.bar-row { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr) 150px; gap: 10px; align-items: center; }
-.bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { height: 14px; background: var(--track); border-radius: 4px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 4px; }
-.bar-val { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.chip {
-  display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
-  border: 1px solid currentColor; white-space: nowrap; margin-left: 6px;
-}
-.band-good { color: var(--good); }
-.band-warn { color: var(--warn); }
-.band-serious { color: var(--serious); }
-.band-critical { color: var(--critical); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-top: 10px; }
-.legend span::before { content: "\25A0  "; }
-.legend .lg-good::before { color: var(--good); }
-.legend .lg-warn::before { color: var(--warn); }
-.legend .lg-serious::before { color: var(--serious); }
-.legend .lg-critical::before { color: var(--critical); }
-.table-tools { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-input[type="search"] {
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.tools .search { flex: 1 1 260px; min-width: 0; }
+select, input[type="search"] {
   font: inherit; color: var(--ink); background: var(--surface);
-  border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-height: 36px; min-width: 200px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; min-height: 40px;
 }
-input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="search"] { width: 100%; }
+select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.count { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
 .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
-table { border-collapse: collapse; width: 100%; min-width: 720px; font-variant-numeric: tabular-nums; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-variant-numeric: tabular-nums; }
 th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
-th:first-child, td:first-child, th.name, td.name { text-align: left; }
+th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
 th { font-size: 12px; color: var(--ink-2); font-weight: 700; background: var(--surface); position: sticky; top: 0; cursor: pointer; user-select: none; }
+th:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 th[aria-sort="ascending"]::after { content: " \25B2"; font-size: 10px; }
 th[aria-sort="descending"]::after { content: " \25BC"; font-size: 10px; }
 tbody tr:last-child td { border-bottom: none; }
 tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
+td.name { min-width: 220px; }
+td.cf-good { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); font-weight: 700; }
+td.cf-warn { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); font-weight: 700; }
+td.cf-serious { background: color-mix(in srgb, var(--serious) 20%, transparent); color: var(--serious); font-weight: 700; }
+td.cf-critical { background: color-mix(in srgb, var(--critical) 16%, transparent); color: var(--critical); font-weight: 700; }
+td.cf-flag { color: var(--warn); font-weight: 700; }
+tr.row-zero td.name { color: var(--critical); }
 .empty { padding: 28px 12px; text-align: center; color: var(--ink-2); }
 .foot-note { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
-@media (prefers-reduced-motion: no-preference) { .bar-fill { transition: width .4s ease; } }
-@media (min-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div class="wrap">
-  <header class="top">
-    <h1>Serviceability Dashboard</h1>
-    <div class="sub" id="asOf">Drop the Serviceability Excel file below to load the report.</div>
+  <header>
+    <h1>Serviceability Table</h1>
+    <div class="sub" id="asOf">Drop the Serviceability Excel file below to show the table.</div>
   </header>
 
   <section class="panel" aria-label="Upload Serviceability file">
@@ -157,50 +137,48 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
       <span class="hint">.xlsx file with a "Serviceability" sheet</span>
     </div>
     <div class="status" id="status"></div>
+    <div id="msg"></div>
   </section>
 
-  <div id="msg"></div>
-
-  <section class="panel" aria-label="Key figures">
-    <div class="kpis" id="kpis"></div>
-  </section>
-
-  <section class="panel" aria-labelledby="rankH">
-    <h2 id="rankH">Serviceability % by garage</h2>
-    <div class="bars" id="bars"></div>
-    <div class="legend" aria-label="Band key">
-      <span class="lg-good">50% and above</span>
-      <span class="lg-warn">20% to 49%</span>
-      <span class="lg-serious">1% to 19%</span>
-      <span class="lg-critical">0%</span>
+  <section class="panel" aria-label="Serviceability table">
+    <div class="tools">
+      <div class="search">
+        <input type="search" id="q" placeholder="Search garage name, status or any number (e.g. MCC, 0, 20%)" aria-label="Search all garages">
+      </div>
+      <select id="sortSel" aria-label="Sort table">
+        <option value="pct:-1">Serviceability % (high to low)</option>
+        <option value="pct:1">Serviceability % (low to high)</option>
+        <option value="sno:1">S No (ascending)</option>
+        <option value="serv:-1">Serviceability (high to low)</option>
+        <option value="serv:1">Serviceability (low to high)</option>
+        <option value="target:-1">Target (high to low)</option>
+        <option value="target:1">Target (low to high)</option>
+        <option value="name:1">Garage name (A to Z)</option>
+        <option value="name:-1">Garage name (Z to A)</option>
+      </select>
     </div>
-  </section>
-
-  <section class="panel" aria-labelledby="tblH">
-    <div class="table-tools">
-      <h2 id="tblH" style="margin:0">Garage detail</h2>
-      <input type="search" id="q" placeholder="Filter garages" aria-label="Filter garages">
-    </div>
+    <div class="count" id="qCount"></div>
     <div class="table-scroll">
       <table id="tbl">
         <thead>
           <tr>
-            <th class="name" data-k="name" tabindex="0">Garage</th>
+            <th data-k="sno" tabindex="0">S No</th>
+            <th data-k="name" tabindex="0">Garage Name</th>
             <th data-k="target" tabindex="0">Target</th>
-            <th data-k="serv" tabindex="0">Serviceable</th>
-            <th data-k="pct" tabindex="0">Serviceability %</th>
-            <th data-k="under" tabindex="0">Under service</th>
-            <th data-k="empty" tabindex="0">Empty return</th>
-            <th data-k="insp" tabindex="0">Inspection only</th>
+            <th data-k="mtd" tabindex="0">MTD</th>
+            <th data-k="under" tabindex="0">Under Service</th>
+            <th data-k="empty" tabindex="0">Empty Return</th>
+            <th data-k="insp" tabindex="0">Inspection Only</th>
             <th data-k="vnr" tabindex="0">VNR</th>
-            <th data-k="band" tabindex="0">Status</th>
+            <th data-k="serv" tabindex="0">Serviceability</th>
+            <th data-k="pct" tabindex="0">Serviceability %</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
         <tfoot id="tfoot"></tfoot>
       </table>
     </div>
-    <div class="foot-note">Serviceability % = Serviceable ÷ Target. Garages with no target show as 0%.</div>
+    <div class="foot-note">Serviceability % = Serviceability ÷ Target. Garages with no target show 0%.</div>
   </section>
 </div>
 
@@ -221,15 +199,14 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   };
   var band = function (pct, target) {
-    if (!target) return { k: "critical", label: "No target" };
-    if (pct >= 50) return { k: "good", label: "Good" };
-    if (pct >= 20) return { k: "warn", label: "Watch" };
-    if (pct > 0) return { k: "serious", label: "Low" };
-    return { k: "critical", label: "Zero" };
+    if (!target) return "critical";
+    if (pct >= 50) return "good";
+    if (pct >= 20) return "warn";
+    if (pct > 0) return "serious";
+    return "critical";
   };
-  var BAND_COLOR = { good: "var(--good)", warn: "var(--warn)", serious: "var(--serious)", critical: "var(--critical)" };
 
-  // ---------- CSV-style text parsing (used on the sheet's values) ----------
+  // ---------- parsing ----------
   function parseCSV(text) {
     var rows = [], row = [], field = "", inQ = false, i = 0;
     while (i < text.length) {
@@ -258,8 +235,9 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     rows = rows.slice(hdr);
     var head = rows[0].map(function (h) { return h.trim().toLowerCase().replace(/\s+/g, " "); });
     var col = function (name) { return head.indexOf(name); };
-    var iName = col("garage name"), iTarget = col("target"), iMtd = col("mtd"), iServ = col("serviceability");
-    var iUnder = col("under service"), iEmpty = col("empty return"), iInsp = col("inspection only"), iVnr = col("vnr");
+    var iSno = col("s no"), iName = col("garage name"), iTarget = col("target"), iMtd = col("mtd");
+    var iServ = col("serviceability"), iUnder = col("under service"), iEmpty = col("empty return");
+    var iInsp = col("inspection only"), iVnr = col("vnr");
     if (iTarget < 0) throw new Error('No "Target" column found in the Serviceability sheet.');
     var num = function (r, i) {
       if (i < 0) return 0;
@@ -275,7 +253,8 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
       var target = num(r, iTarget), mtd = num(r, iMtd);
       var serv = iServ >= 0 ? num(r, iServ) : mtd;
       out.push({
-        name: name, target: target, serv: serv,
+        sno: iSno >= 0 ? num(r, iSno) : out.length + 1,
+        name: name, target: target, mtd: mtd, serv: serv,
         under: num(r, iUnder), empty: num(r, iEmpty), insp: num(r, iInsp), vnr: num(r, iVnr),
         pct: target ? (serv / target) * 100 : 0
       });
@@ -284,68 +263,32 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     return out;
   }
 
-  function totalsOf(g) {
-    var t = { garages: g.length, target: 0, serv: 0, under: 0, empty: 0, insp: 0, vnr: 0, zero: 0 };
-    g.forEach(function (x) {
-      t.target += x.target; t.serv += x.serv; t.under += x.under;
-      t.empty += x.empty; t.insp += x.insp; t.vnr += x.vnr;
-      if (x.serv === 0) t.zero++;
-    });
-    t.pct = t.target ? (t.serv / t.target) * 100 : 0;
-    return t;
-  }
-
   var state = { garages: null, fileName: "", asOf: null, sortKey: "pct", sortDir: -1, filter: "" };
 
-  function kpi(label, value, note, cls) {
-    return '<div class="kpi ' + cls + '"><div class="label">' + esc(label) + '</div><div class="value">' +
-      esc(value) + '</div><div class="note">' + esc(note) + "</div></div>";
+  // Applies the search; also updates the match count.
+  function visibleGarages() {
+    var q = state.filter.trim().toLowerCase();
+    var list = (state.garages || []).filter(function (g) {
+      if (!q) return true;
+      var hay = [g.sno, g.name, g.target, g.mtd, g.under, g.empty, g.insp, g.vnr, g.serv, pctTxt(g.pct)].join(" ").toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+    $("#qCount").textContent = state.garages ? (q ? list.length + " of " + state.garages.length + " garages match" : state.garages.length + " garages") : "";
+    return list;
   }
 
   function render() {
     var garages = state.garages;
     if (!garages) {
-      $("#kpis").innerHTML = kpi("Overall serviceability", "–", "load a file to see figures", "overall") +
-        kpi("Serviceable (MTD)", "–", "", "") + kpi("Target", "–", "", "") +
-        kpi("Under service", "–", "", "") + kpi("Empty return", "–", "", "") + kpi("Zero serviceability", "–", "", "");
-      $("#bars").innerHTML = '<div class="empty">No data loaded yet.</div>';
-      $("#tbody").innerHTML = '<tr><td colspan="9" class="empty">No garage data yet.</td></tr>';
+      $("#tbody").innerHTML = '<tr><td colspan="10" class="empty">No data loaded yet. Drop the Serviceability file above.</td></tr>';
       $("#tfoot").innerHTML = "";
+      document.querySelectorAll("#tbl th[data-k]").forEach(function (th) { th.setAttribute("aria-sort", "none"); });
       return;
     }
-    var t = totalsOf(garages);
     $("#asOf").textContent = "Serviceability as of " + fmtDate(state.asOf) + " · " + garages.length + " garages";
     $("#status").textContent = "Loaded: " + state.fileName;
 
-    $("#kpis").innerHTML = [
-      kpi("Overall serviceability", pctTxt(t.pct), fmtInt(t.serv) + " of " + fmtInt(t.target) + " target", "overall"),
-      kpi("Serviceable (MTD)", fmtInt(t.serv), "vehicles", ""),
-      kpi("Target", fmtInt(t.target), "across " + t.garages + " garages", ""),
-      kpi("Under service", fmtInt(t.under), "vehicles in workshop", ""),
-      kpi("Empty return", fmtInt(t.empty), "vehicles", ""),
-      kpi("Zero serviceability", fmtInt(t.zero), "garages at 0%", "")
-    ].join("");
-
-    var ranked = garages.slice().sort(function (a, b) { return b.pct - a.pct || b.serv - a.serv; });
-    $("#bars").innerHTML = ranked.map(function (g) {
-      var b = band(g.pct, g.target);
-      var w = Math.max(0, Math.min(100, g.pct));
-      return '<div class="bar-row">' +
-        '<div class="bar-name" title="' + esc(g.name) + '">' + esc(g.name) + "</div>" +
-        '<div class="bar-track" role="img" aria-label="' + esc(g.name) + " " + pctTxt(g.pct) + '"><div class="bar-fill" style="width:' + w + "%;background:" + BAND_COLOR[b.k] + '"></div></div>' +
-        '<div class="bar-val">' + pctTxt(g.pct) + ' <span class="chip band-' + b.k + '">' + b.label + "</span></div>" +
-        "</div>";
-    }).join("");
-
-    renderTable(garages, t);
-  }
-
-  function renderTable(garages, t) {
-    var q = state.filter.trim().toLowerCase();
-    var rows = garages.map(function (g) {
-      var b = band(g.pct, g.target);
-      return { name: g.name, target: g.target, serv: g.serv, pct: g.pct, under: g.under, empty: g.empty, insp: g.insp, vnr: g.vnr, band: b.k, label: b.label };
-    }).filter(function (r) { return !q || r.name.toLowerCase().indexOf(q) >= 0; });
+    var rows = visibleGarages();
     var k = state.sortKey, dir = state.sortDir;
     rows.sort(function (a, b) {
       var av = a[k], bv = b[k];
@@ -355,22 +298,33 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     document.querySelectorAll("#tbl th[data-k]").forEach(function (th) {
       th.setAttribute("aria-sort", th.dataset.k === k ? (dir === 1 ? "ascending" : "descending") : "none");
     });
+
     $("#tbody").innerHTML = rows.length ? rows.map(function (r) {
-      return "<tr>" +
+      var b = band(r.pct, r.target);
+      return '<tr class="' + (r.serv === 0 && r.target > 0 ? "row-zero" : "") + '">' +
+        "<td>" + fmtInt(r.sno) + "</td>" +
         '<td class="name">' + esc(r.name) + "</td>" +
         "<td>" + fmtInt(r.target) + "</td>" +
-        "<td>" + fmtInt(r.serv) + "</td>" +
-        "<td>" + pctTxt(r.pct) + "</td>" +
-        "<td>" + fmtInt(r.under) + "</td>" +
-        "<td>" + fmtInt(r.empty) + "</td>" +
+        "<td>" + fmtInt(r.mtd) + "</td>" +
+        '<td' + (r.under > 0 ? ' class="cf-flag"' : '') + ">" + fmtInt(r.under) + "</td>" +
+        '<td' + (r.empty > 0 ? ' class="cf-flag"' : '') + ">" + fmtInt(r.empty) + "</td>" +
         "<td>" + fmtInt(r.insp) + "</td>" +
         "<td>" + fmtInt(r.vnr) + "</td>" +
-        '<td><span class="chip band-' + r.band + '">' + r.label + "</span></td>" +
+        "<td>" + fmtInt(r.serv) + "</td>" +
+        '<td class="cf-' + b + '">' + pctTxt(r.pct) + "</td>" +
         "</tr>";
-    }).join("") : '<tr><td colspan="9" class="empty">No garages match this filter.</td></tr>';
-    $("#tfoot").innerHTML = "<tr><td class=\"name\">Total (" + t.garages + ")</td>" +
-      "<td>" + fmtInt(t.target) + "</td><td>" + fmtInt(t.serv) + "</td><td>" + pctTxt(t.pct) + "</td>" +
-      "<td>" + fmtInt(t.under) + "</td><td>" + fmtInt(t.empty) + "</td><td>" + fmtInt(t.insp) + "</td><td>" + fmtInt(t.vnr) + "</td><td></td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">No garages match this search.</td></tr>';
+
+    var t = { target: 0, mtd: 0, under: 0, empty: 0, insp: 0, vnr: 0, serv: 0 };
+    garages.forEach(function (g) {
+      t.target += g.target; t.mtd += g.mtd; t.under += g.under; t.empty += g.empty;
+      t.insp += g.insp; t.vnr += g.vnr; t.serv += g.serv;
+    });
+    var tpct = t.target ? (t.serv / t.target) * 100 : 0;
+    $("#tfoot").innerHTML = "<tr><td></td><td class=\"name\">Total (" + garages.length + ")</td>" +
+      "<td>" + fmtInt(t.target) + "</td><td>" + fmtInt(t.mtd) + "</td><td>" + fmtInt(t.under) + "</td>" +
+      "<td>" + fmtInt(t.empty) + "</td><td>" + fmtInt(t.insp) + "</td><td>" + fmtInt(t.vnr) + "</td>" +
+      "<td>" + fmtInt(t.serv) + "</td><td>" + pctTxt(tpct) + "</td></tr>";
   }
 
   function message(text, isErr) {
@@ -408,16 +362,21 @@ tfoot td { font-weight: 800; border-top: 2px solid var(--line); }
     var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     if (file) loadFile(file);
   });
-  // Stop a file dropped outside the box from replacing the page.
   window.addEventListener("dragover", function (e) { e.preventDefault(); });
   window.addEventListener("drop", function (e) { e.preventDefault(); });
 
-  $("#q").addEventListener("input", function (e) { state.filter = e.target.value; if (state.garages) render(); });
+  $("#q").addEventListener("input", function (e) { state.filter = e.target.value; render(); });
+  $("#sortSel").addEventListener("change", function (e) {
+    var parts = e.target.value.split(":");
+    state.sortKey = parts[0];
+    state.sortDir = Number(parts[1]);
+    render();
+  });
   document.querySelectorAll("#tbl th[data-k]").forEach(function (th) {
     var act = function () {
       var k = th.dataset.k;
       if (state.sortKey === k) state.sortDir = -state.sortDir;
-      else { state.sortKey = k; state.sortDir = k === "name" ? 1 : -1; }
+      else { state.sortKey = k; state.sortDir = (k === "name") ? 1 : -1; }
       render();
     };
     th.addEventListener("click", act);
