@@ -344,21 +344,15 @@ tr.row-zero td.name { color: var(--critical); }
       state.asOf = file.lastModified ? new Date(file.lastModified) : new Date();
       message("");
       render();
-      var key = localStorage.getItem("uploadKey") || "";
-      if (!key) {
-        key = window.prompt("Upload key (ask the dashboard owner):") || "";
-        if (key) localStorage.setItem("uploadKey", key);
-      }
       var resp = await fetch("/api/report", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-upload-key": key },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fileName: state.fileName, asOf: state.asOf.toISOString(), garages: state.garages })
       });
       if (resp.ok) {
         message("Saved. Everyone who opens this link now sees this report.");
       } else {
         var j = await resp.json().catch(function () { return {}; });
-        if (resp.status === 401) localStorage.removeItem("uploadKey");
         message("Showing on screen only: " + (j.error || "save failed") + ".", true);
       }
     } catch (e) {
