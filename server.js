@@ -49,7 +49,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "PUT" && url.pathname === "/api/report") {
       const key = process.env.UPLOAD_KEY || "";
-      if (!key || req.headers["x-upload-key"] !== key) {
+      if (key && req.headers["x-upload-key"] !== key) {
         return json(res, 401, { error: "Wrong upload key" });
       }
       let payload;
