@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { Pool } = require("pg");
 
 const pool = new Pool({
@@ -8,6 +9,10 @@ const pool = new Pool({
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
 });
 
+// Only the admin (you) can upload. Everyone else gets read-only access.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
+
+// id 1 = latest report (what everyone sees), id 2 = the report before it (fallback).
 async function init() {
   await pool.query(
     "CREATE TABLE IF NOT EXISTS report (id INT PRIMARY KEY, payload JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now())"
@@ -33,6 +38,14 @@ function readBody(req, limit) {
   });
 }
 
+function isAdmin(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const given = String(req.headers["x-admin-password"] || "");
+  const a = crypto.createHash("sha256").update(given).digest();
+  const b = crypto.createHash("sha256").update(ADMIN_PASSWORD).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
@@ -42,16 +55,22 @@ const server = http.createServer(async (req, res) => {
       return res.end(fs.readFileSync(path.join(__dirname, "index.html")));
     }
 
+    // Admin login check: returns ok only when the password is right.
+    if (req.method === "POST" && url.pathname === "/api/login") {
+      if (!ADMIN_PASSWORD) return json(res, 500, { error: "Admin password is not set on the server" });
+      return json(res, isAdmin(req) ? 200 : 401, isAdmin(req) ? { ok: true } : { error: "Wrong password" });
+    }
+
+    // Everyone reads the latest report. If nothing newer exists, the previous one is shown.
     if (req.method === "GET" && url.pathname === "/api/report") {
-      const r = await pool.query("SELECT payload FROM report WHERE id = 1");
+      let r = await pool.query("SELECT payload FROM report WHERE id = 1");
+      if (!r.rows[0]) r = await pool.query("SELECT payload FROM report WHERE id = 2");
       return json(res, 200, r.rows[0] ? r.rows[0].payload : { garages: null });
     }
 
+    // Only the admin can upload. The current report moves to slot 2, the new one goes to slot 1.
     if (req.method === "PUT" && url.pathname === "/api/report") {
-      const key = process.env.UPLOAD_KEY || "";
-      if (key && req.headers["x-upload-key"] !== key) {
-        return json(res, 401, { error: "Wrong upload key" });
-      }
+      if (!isAdmin(req)) return json(res, 401, { error: "Admin login needed" });
       let payload;
       try {
         payload = JSON.parse(await readBody(req, 5 * 1024 * 1024));
@@ -61,6 +80,9 @@ const server = http.createServer(async (req, res) => {
       if (!payload || !Array.isArray(payload.garages) || payload.garages.length === 0) {
         return json(res, 400, { error: "No garage rows in the file" });
       }
+      await pool.query(
+        "INSERT INTO report (id, payload, updated_at) SELECT 2, payload, updated_at FROM report WHERE id = 1 ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = EXCLUDED.updated_at"
+      );
       await pool.query(
         "INSERT INTO report (id, payload, updated_at) VALUES (1, $1, now()) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()",
         [JSON.stringify(payload)]
